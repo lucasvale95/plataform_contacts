@@ -13,9 +13,14 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import { mainListItems } from '../../Components/ListItems';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import LogoutIcon from '@mui/icons-material/Logout';
 import DataGridTable from '../../Components/RegisterContact';
-import { Button } from '@mui/material';
+import { Button, ListItemButton, ListItemIcon, ListItemText, TextField } from '@mui/material';
+import {  Modal, ModalDialog } from '@mui/joy';
+import { AuthContext } from '../../Contexts/AuthContext';
+import api from '../../Services/api';
+import { useNavigate } from 'react-router-dom';
 
 const drawerWidth = 200;
 
@@ -66,12 +71,64 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 const mdTheme = createTheme();
 
 function DashboardContent() {
+
+  const {user, setUser, loading, setContacts} = React.useContext(AuthContext)
+
+  const navigate = useNavigate()
+
   const [open, setOpen] = React.useState(true);
+  const [openModal, setOpenModal] = React.useState(false);
   const toggleDrawer = () => {
     setOpen(!open);
   };
 
+  const handleRegister = async (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const dataRegister = {
+      name: data.get('name'),
+      email: data.get('email'),
+      age: Number(data.get('age')),
+      phone: data.get('phone'),
+    };
+    
+    await api.post('/contacts', dataRegister)
+      .then((response)=> { 
+        if(response.status === 201) {
+          setContacts((prev) => [...prev, response.data])
+
+          setOpenModal(false)
+        }
+      })
+  }
+
+  const logout = () => {
+    setUser('')
+    localStorage.removeItem('@token')
+    localStorage.removeItem('@user')
+    navigate('/signin', {replace: true})
+  }
+  
+  React.useEffect( ()=> {
+
+    async function getContacts() {
+      await api.get('/contacts').then((response) => {
+        setContacts(response.data)
+    })} 
+    getContacts()
+  },[setContacts, setUser] )
+
+
+  if (loading) {
+    return <div>Carregando...</div>;
+  }
+
   return (
+    <>
+    { user && (
+
+    <>
+    
     <ThemeProvider theme={mdTheme}>
       <Box sx={{ display: 'flex' }}>
         <CssBaseline />
@@ -119,7 +176,19 @@ function DashboardContent() {
           </Toolbar>
           <Divider />
           <List component="nav">
-            {mainListItems }
+            <ListItemButton>
+            <ListItemIcon>
+              <DashboardIcon />
+            </ListItemIcon>
+            <ListItemText primary="Dashboard" />
+            </ListItemButton>
+            
+            <ListItemButton>
+              <ListItemIcon>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText primary="Logout" onClick={logout}/>
+            </ListItemButton>
           </List>
         </Drawer>
         <Box
@@ -135,25 +204,90 @@ function DashboardContent() {
           }}
         >
           <Toolbar />
-          <Container maxWidth="lg" minWidth='sm' sx={{ mt: 4, mb: 4 }}>
+          <Container maxWidth='lg' minWidth='sm' sx={{ mt: 4, mb: 4 }}>
             <Grid spacing={3} sx={{display: 'flex', flexDirection: 'column'}}>
-              <Grid item xs={12} md={12} lg={9}>
+              <Grid item xs={10} md={12} lg={9}>
                 
                 <DataGridTable/>
                 
               </Grid>
+              <span style={{marginTop: 15, marginLeft: 15, fontStyle:'italic', fontSize: 13}}>** To edit a contact: double-clicking a cell, write a new word and press Enter. Finally press Edit.  </span>
               <Button
                 type="button"                
                 variant="contained"
-                sx={{marginLeft: 'auto', marginRight: 1 , mt: 10, mb: 2, backgroundColor: '#2d3a5d', width: 150, height: 40, "&:hover": {backgroundColor: '#4b609b'} }}
+                onClick={()=> setOpenModal(true)}
+                sx={{marginLeft: 'auto', marginRight: 1 , mt: 3, mb: 2, backgroundColor: '#2d3a5d', width: 150, height: 40, "&:hover": {backgroundColor: '#4b609b'} }}
               >
                 New Contact
-              </Button>
+              </Button> 
             </Grid>
-          </Container>
+          </Container> 
+          
         </Box>
       </Box>
+      
     </ThemeProvider>
+    <Modal open={openModal} onClose={() => setOpenModal(false)}>
+      <ModalDialog
+        aria-labelledby="basic-modal-dialog-title"
+        aria-describedby="basic-modal-dialog-description"
+        sx={{ maxWidth: 500 }}
+      >
+        <Typography id="basic-modal-dialog-title" component="h2" sx={{fontWeight: '600'}}>
+          Register contact
+        </Typography>
+        <Box component="form" noValidate onSubmit={handleRegister} sx={{ mt: 1 }}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="name"
+                label="Name"
+                type="text"
+                id="name"
+              />              
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="email"
+                label="Email"
+                name="email"
+                autoComplete="email"
+                autoFocus
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="age"
+                label="Age"
+                type="number"
+                id="age"
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="phone"
+                label="Phone"
+                type="text"
+                id="phone"
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2, backgroundColor: '#2d3a5d', height: 40, "&:hover": {backgroundColor: '#4b609b'} }}
+              >
+                Register
+              </Button>
+              </Box>
+      </ModalDialog>
+    </Modal>
+    </>
+    )}
+    </>
   );
 }
 

@@ -11,17 +11,31 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
+import api from '../../Services/api';
 
 
 const theme = createTheme();
 
 export default function SignUp() {
-  const handleSubmit = (event) => {
+
+  const navigate = useNavigate()
+
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
+    const dataCreate = ({
+      name: data.get('name'),
+      phone: data.get('phone'),
       email: data.get('email'),
       password: data.get('password'),
+    });
+
+    await api.post("/users", dataCreate)
+      .then((response) => {
+
+        navigate("/signin", { replace: true });
     });
   };
 
@@ -45,24 +59,26 @@ export default function SignUp() {
           </Typography>
           <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <TextField
                   autoComplete="given-name"
-                  name="firstName"
+                  name="name"
                   required
                   fullWidth
-                  id="firstName"
-                  label="First Name"
+                  type={'text'}
+                  id="name"
+                  label="Your Name"
                   autoFocus
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <TextField
                   required
                   fullWidth
-                  id="lastName"
-                  label="Last Name"
-                  name="lastName"
+                  id="phone"
+                  label="Phone"
+                  type={'number'}
+                  name="phone"
                   autoComplete="family-name"
                 />
               </Grid>
@@ -70,6 +86,7 @@ export default function SignUp() {
                 <TextField
                   required
                   fullWidth
+                  type={'email'}
                   id="email"
                   label="Email Address"
                   name="email"
@@ -98,7 +115,7 @@ export default function SignUp() {
             </Button>
             <Grid container justifyContent="center">
               <Grid item>
-                <Link href="#" variant="body2">
+                <Link href="/signin" variant="body2">
                   Already have an account? Sign in
                 </Link>
               </Grid>

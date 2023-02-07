@@ -10,19 +10,44 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Paper } from '@mui/material';
+import { AuthContext } from '../../Contexts/AuthContext';
+import api from '../../Services/api';
+import { useNavigate } from 'react-router-dom';
 
 
 const theme = createTheme();
 
 export default function SignIn() {
-  const handleSubmit = (event) => {
+
+  const { setUser } = React.useContext(AuthContext);
+  let navigate = useNavigate();
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
+    const dataLogin = {
       email: data.get('email'),
       password: data.get('password'),
-    });
-  };
+    };
+
+    await api.post("/login", dataLogin)
+      .then(async (response) => {
+          setUser(dataLogin.email);
+
+          api.defaults.headers.common["Authorization"] = `Bearer ${response.data.token}`;
+
+          localStorage.setItem("@token", response.data.token);
+          localStorage.setItem("@user", JSON.stringify(dataLogin.email));})
+         
+    await api.get('/users').then((response) => {
+      setUser(response.data)
+
+      setTimeout(()=> {
+        navigate("/dashboard", { replace: true });
+      }, 1000)  
+
+    })    
+    };
 
   return (
     <ThemeProvider theme={theme}>
@@ -89,7 +114,7 @@ export default function SignIn() {
               </Button>
               <Grid container sx={{display: 'flex', justifyContent: 'center'}}>
                 <Grid item>
-                  <Link href="#" variant="body2">
+                  <Link href="/signup" variant="body2">
                     {"Don't have an account? Sign Up"}
                   </Link>
                 </Grid>

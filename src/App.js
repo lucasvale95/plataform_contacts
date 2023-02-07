@@ -1,10 +1,13 @@
-import './App.css';
-import Dashboard from './Page/Dashboard';
+import React from 'react';
+import RoutesMain from './Routes';
+import AuthProvider from "./Contexts/AuthContext"
 
 function App() {
   return (
     <>
-      <Dashboard />
+    <AuthProvider>
+      <RoutesMain />
+    </AuthProvider>
     </>
   );
 }
